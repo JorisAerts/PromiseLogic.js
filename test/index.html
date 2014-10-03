@@ -1,0 +1,131 @@
+<html>
+	<head>
+		<style>
+			html,body{
+				margin:1em;
+				font-family: "Charcoal", "Helvetica", "Arial"
+			}
+			h1 {
+				font-size: 250%;
+				font-weight: normal;
+			}
+			table#truthtable,
+			table#truthtable thead {
+				border-collapse: collapse;
+				border: 2px solid #666;
+			}
+			table#truthtable thead {
+				background-color: #333;
+				color: #eee;
+			}
+			table#truthtable th,
+			table#truthtable td {
+				border: 1px solid #ccc;
+				padding: .3em;
+			}
+			table tr {
+				transition: all .8s;
+			}
+			tr.DONE {
+				background-color: #cfc;
+			}
+			tr.FAIL {
+				background-color: #fcc;
+			}
+
+		</style>
+	</head>
+	<body>
+
+		<h1>Promise Logic Test</h1>
+
+		<table id="truthtable">
+			<thead>
+				<tr>
+					<th>Title</th>
+					<th>v1</th>
+					<th>v2</th>
+					<th>v3</th>
+					<th>v4</th>
+					<th>Count</th>
+					<th>Result</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+
+
+		<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+		<script src="../src/PromiseLogic.js"></script>
+		<script>
+
+			var fTrue = function(result){
+				var d = new jQuery.Deferred();
+				setTimeout(function(){
+					d.resolve(result);
+				},Math.round(Math.random() * 1500));
+				return d;
+			},
+
+			fFalse = function(result){
+				var d = new jQuery.Deferred();
+				setTimeout(function(){
+					d.reject(result);
+				},Math.round(Math.random() * 1500));
+				return d;
+			};
+
+			var d1 = fTrue("d1"),
+					d2 = fTrue("d2"),
+					d3 = fFalse("d3"),
+					d4 = fFalse("d4"),
+					tbody = jQuery("#truthtable tbody"),
+					cb = function(prefix, ex, tr, key){
+						return function (result) {
+								tr.addClass(prefix);
+								tr.find("td:nth-child(6)").text(result.results.length);
+								tr.find("td:nth-child(7)").text(prefix);
+						}
+					},
+
+					operations = {
+							" ": PromiseLogic,
+							" ALL" : PromiseLogic.ALL
+					},
+					expressions = [ "AND", "OR", "NOT" ],
+					values = {
+							"1100": [d1,d2,d3,d4],
+							"00": [d3,d4],
+							"11": [d1,d2]
+					};
+
+
+
+			jQuery.each(expressions, function(i, ex){
+				jQuery.each(values, function(key, val){
+						jQuery.each(operations, function(type, op){
+
+							var tr = jQuery("<tr><td>"+ex+type+"</td><td/><td/><td/><td/><td/><td/></tr>");
+							for(var i=0,c;i<4;i++){
+								c=key.charAt(i);
+								tr.find("td:nth-child("+(i+2)+")").text(c==="1" ? true : c === "0" ? false : "");
+							}
+							tbody.append(tr);
+
+							jQuery.when(
+								op[ex].apply(window, val)
+							).then(
+								cb("DONE", ex, tr, key),
+								cb("FAIL", ex, tr, key)
+							);
+
+						});
+
+				});
+			});
+
+		</script>
+
+	</body>
+</html>
